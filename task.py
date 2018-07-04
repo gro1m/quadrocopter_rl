@@ -15,20 +15,36 @@ class Task():
             target_pos: target/goal (x,y,z) position for the agent
         """
         # Simulation
-        self.sim = PhysicsSim(init_pose, init_velocities, init_angle_velocities, runtime) 
+        self.sim           = PhysicsSim(init_pose, init_velocities, init_angle_velocities, runtime) 
         self.action_repeat = 3
 
-        self.state_size = self.action_repeat * 6
-        self.action_low = 0
-        self.action_high = 900
-        self.action_size = 4
+        self.state_size    = self.action_repeat * 6
+        self.action_low    = 0
+        self.action_high   = 900
+        self.action_size   = 4
+        
+        self.init_pose     = init_pose
 
         # Goal
-        self.target_pos = target_pos if target_pos is not None else np.array([0., 0., 10.]) 
+        self.target_pos    = target_pos if target_pos is not None else np.array([0., 0., 10.]) 
 
     def get_reward(self):
         """Uses current pose of sim to return reward."""
-        reward = 1.-.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()
+        #Use distance from point to line
+        P, A, B            = self.sim.pose[:3], self.init_pose[:3], self.target_pos
+        AP, AB             = A-P, A-B
+        n                  = AB/np.linalg.norm(AB)
+        pos_dot_norm       = np.linalg.norm(P)*np.linalg.norm(AB) + 0.0001
+        distance           = np.linalg.norm(AP-(AP*n)*n)
+                      
+        #np.dot(self.sim.pose[:3],self.target_pos)/norm#np.dot(self.sim.pose[:3],self.target_pos)/norm
+        #vth                = 8
+        #vel_measure        = (abs(self.sim.v[0])-vth)/vth + (abs(self.sim.v[1])-vth)/vth + (abs(self.sim.v[2])-vth)/vth
+        PB                 = P-B
+        #near_to_goal       = max([abs(PB[0]), abs(PB[1]), abs(PB[2])]) < 0.5
+        reward             = np.tanh(1-10*distance)#+5*near_to_goal #- vel_measure#np.tanh(- 1000*pos_measure - vel_measure)
+        #clip gradients to avoid instabilites with np.tanh
+        # original proposal: 1.-.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()
         return reward
 
     def step(self, rotor_speeds):
@@ -37,7 +53,12 @@ class Task():
         pose_all = []
         for _ in range(self.action_repeat):
             done = self.sim.next_timestep(rotor_speeds) # update the sim pose and velocities
-            reward += self.get_reward() 
+            reward += self.get_reward()
+            #penalize crash
+            '''
+            if done and self.sim.time < self.sim.runtime:
+                reward         = -1
+            '''
             pose_all.append(self.sim.pose)
         next_state = np.concatenate(pose_all)
         return next_state, reward, done
