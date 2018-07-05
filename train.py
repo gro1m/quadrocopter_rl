@@ -10,6 +10,7 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
     task         = Task(init_pose = init_pos, target_pos=target_pos)
     agent        = DDPG_Agent(task)
     coords       = []
+    velocities   = []
     rewards      = []
     for i_episode in range(1, num_episodes+1):
         state    = agent.reset_episode() # start a new episode
@@ -18,6 +19,7 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
             action = agent.act(state) 
             # DO PHYSICS SIMULATION ("FLY")
             x,y,z = task.sim.pose[:3]
+            vx,vy,vz = task.sim.v
             next_state, reward, done = task.step(action)
             # UPDATE EXPERIENCE AND LEARN IF POSSIBLE
             agent.step(action, reward, next_state, done)
@@ -28,6 +30,7 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
                       .format(i_episode, agent.avg_rewards), end="")  # [debug]
                 rewards.append(reward/agent.task.action_repeat)
                 coords.append([x,y,z])
+                velocities.append([vx,vy,vz])
                 break
             sys.stdout.flush()
 
@@ -71,6 +74,14 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
         plt.plot(np.array(z), label='z', marker = '.')
         plt.legend()
         _ = plt.ylim()
+        
+        fig = plt.figure(4)
+        fig.clf()
+        vx, vy, vz =  zip(*velocities)
+        plt.plot(np.array(vx), label='v_x', marker = '.')
+        plt.plot(np.array(vy), label='v_y', marker = '.')
+        plt.plot(np.array(vz), label='v_z', marker = '.')
+        plt.legend()
         
         #print("z = ", np.array(z))
     print("Performance (average over last 10 rewards) = ", sum(rewards[index_lastTen:])/10)

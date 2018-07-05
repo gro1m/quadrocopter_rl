@@ -93,11 +93,6 @@ class DDPG_Agent():
         action_gradients = np.reshape(self.critic_local.get_action_gradients([states, actions, 0]), 
                                       (-1, self.action_size))
 
-        '''
-        print("states.shape: ", states.shape, states.dtype)
-        print("action_gradients.shape: ", action_gradients.shape, action_gradients.dtype)
-        set_trace()
-        '''
         self.actor_local.train_fn([states, action_gradients, 1]) #custom training function, 1 for K.learning_phasse
 
             
