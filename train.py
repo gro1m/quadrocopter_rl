@@ -11,6 +11,7 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
     agent        = DDPG_Agent(task)
     coords       = []
     velocities   = []
+    euler_angles = []
     rewards      = []
     for i_episode in range(1, num_episodes+1):
         state    = agent.reset_episode() # start a new episode
@@ -20,6 +21,7 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
             # DO PHYSICS SIMULATION ("FLY")
             x,y,z = task.sim.pose[:3]
             vx,vy,vz = task.sim.v
+            phi, theta, psi = task.sim.angular_v
             next_state, reward, done = task.step(action)
             # UPDATE EXPERIENCE AND LEARN IF POSSIBLE
             agent.step(action, reward, next_state, done)
@@ -31,6 +33,7 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
                 rewards.append(reward/agent.task.action_repeat)
                 coords.append([x,y,z])
                 velocities.append([vx,vy,vz])
+                euler_angles.append([phi, theta, psi])
                 break
             sys.stdout.flush()
 
@@ -83,5 +86,32 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
         plt.plot(np.array(vz), label='v_z', marker = '.')
         plt.legend()
         
+        fig = plt.figure(5)
+        fig.clf()
+        phi, theta, psi =  zip(*euler_angles)
+        plt.plot(np.array(phi), label='phi', marker = '.')
+        plt.plot(np.array(theta), label='theta', marker = '.')
+        plt.plot(np.array(psi), label='psi', marker = '.')
+        plt.legend()
+        #print("z = ", np.array(z))
+        
+        def reward_fun(D, V):
+            R = np.zeros(D.shape)
+            for i in range(D.shape[0]):
+                for j in range(D.shape[1]):
+                    R[i][j] = - 0.00034 * D[i][j]**2 + 0.034*V[i][j]
+                            
+            return R
+    
+        fig = plt.figure(6, figsize = (15,7))
+        fig.clf()
+        ax = Axes3D(fig)
+        z_displacement  = np.linspace(-50, 50, 200)
+        z_velocity      = np.linspace(-5, 5, 200)
+        D, V            = np.meshgrid(z_displacement, z_velocity)
+        R               = reward_fun(D, V)
+        
+        ax.contour3D(D, V, R, 500, cmap = 'binary')
+        ax.set_xlabel('z displacement'), ax.set_ylabel('z velocity'), ax.set_zlabel('reward')
         #print("z = ", np.array(z))
     print("Performance (average over last 10 rewards) = ", sum(rewards[index_lastTen:])/10)
