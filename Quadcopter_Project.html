@@ -12323,10 +12323,10 @@ train(num_episodes = 1000, target_pos = np.array([0., 0., 10.]), do_plot = &#39;
 
 
 
-<div id="0debaad2-7229-4921-b0bd-c78bd50b62e7"></div>
+<div id="74ea983c-d0b7-4641-80c8-5fa17629e2fe"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#0debaad2-7229-4921-b0bd-c78bd50b62e7');
+var element = $('#74ea983c-d0b7-4641-80c8-5fa17629e2fe');
 /* Put everything inside the global mpl namespace */
 window.mpl = {};
 
@@ -13122,10 +13122,10 @@ if (IPython.notebook.kernel != null) {
 
 
 
-<div id="9deefd74-8319-4d1d-9a60-5f22f2d17f4c"></div>
+<div id="94392df4-35ab-4c39-b0c6-792077038b1e"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#9deefd74-8319-4d1d-9a60-5f22f2d17f4c');
+var element = $('#94392df4-35ab-4c39-b0c6-792077038b1e');
 /* Put everything inside the global mpl namespace */
 window.mpl = {};
 
@@ -13921,10 +13921,10 @@ if (IPython.notebook.kernel != null) {
 
 
 
-<div id="a3ab287d-15ef-45bc-9bce-b84d482f74c3"></div>
+<div id="ce216fe5-778f-4242-b726-20eaff2191fd"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#a3ab287d-15ef-45bc-9bce-b84d482f74c3');
+var element = $('#ce216fe5-778f-4242-b726-20eaff2191fd');
 /* Put everything inside the global mpl namespace */
 window.mpl = {};
 
@@ -14720,10 +14720,10 @@ if (IPython.notebook.kernel != null) {
 
 
 
-<div id="9590dfe3-d0bc-4158-9697-cb4de29300ef"></div>
+<div id="b038a9c6-7174-4e9d-862b-5a0527a8f22b"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#9590dfe3-d0bc-4158-9697-cb4de29300ef');
+var element = $('#b038a9c6-7174-4e9d-862b-5a0527a8f22b');
 /* Put everything inside the global mpl namespace */
 window.mpl = {};
 
@@ -15519,10 +15519,10 @@ if (IPython.notebook.kernel != null) {
 
 
 
-<div id="277b95ff-aa6e-4fc9-8e58-fadce53697db"></div>
+<div id="0b5ee697-d734-4423-99ce-3c333e197965"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#277b95ff-aa6e-4fc9-8e58-fadce53697db');
+var element = $('#0b5ee697-d734-4423-99ce-3c333e197965');
 /* Put everything inside the global mpl namespace */
 window.mpl = {};
 
@@ -16318,10 +16318,10 @@ if (IPython.notebook.kernel != null) {
 
 
 
-<div id="aac359d7-59b6-4924-b760-7c32ba65cf19"></div>
+<div id="0fa49fdc-060a-45d4-a4c9-87e7d9b7aa2a"></div>
 <div class="output_subarea output_javascript ">
 <script type="text/javascript">
-var element = $('#aac359d7-59b6-4924-b760-7c32ba65cf19');
+var element = $('#0fa49fdc-060a-45d4-a4c9-87e7d9b7aa2a');
 /* Put everything inside the global mpl namespace */
 window.mpl = {};
 
@@ -17149,7 +17149,9 @@ Wall time: 13min 42s
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Reflections">Reflections<a class="anchor-link" href="#Reflections">&#182;</a></h2><p><strong>Question 1</strong>: Describe the task that you specified in <code>task.py</code>.  How did you design the reward function?</p>
-<p><strong>Answer</strong>: The task originally should be to reach a specific target position, but this proved too be very difficult. Furthermore, one potentially could try to first reach a certain position on one axis and then improve one of the other axes. So finally the task is defined as takeoff from [0, 0, 1] to the target position [0, 0, 10]. for the quadrocopter to land at a specified position. To avoid training instability - see plot above - the reward function was chosen to be between -1 and 1 manually, as tanhing (np.tanh) or clipping (np.clip) the reward function did not seem to improve learning. To make the training as easy as possible, the reward function has been chosen to be a function of the distance to the final target position as well as rewarding a positive upward z velocity, also because the dependency on one coordinate, allows to make the reward plot above and therefore leads to a more intuitive and easier to tune reward function.</p>
+<p><strong>Answer</strong>: The task originally should be to reach a specific target position, but this proved too be very difficult. Furthermore, one potentially could try to first reach a certain position on one axis and then improve one of the other axes. So finally the task is defined as takeoff from [0, 0, 1] to the target position [0, 0, 10]. for the quadrocopter to land at a specified position. To avoid training instability - see plot above - the reward function was chosen to be between -1 and 1 manually, as tanhing (np.tanh) or clipping (np.clip) the reward function did not seem to improve learning. To make the training as easy as possible, the following reward function has been chosen: $$\text{reward} = - 0.00034 \cdot (z_{\text{current}}-z_{\text{target}}) + 0.034 \cdot v_z\text{,}$$ i.e. a function of the distance to the final target position as well as rewarding a positive upward z velocity, also because the dependency on one coordinate, allows to make the reward plot above and therefore leads to a more intuitive and easier to tune reward function. For the performance of this function, see also Quadcopter<em>Project.html.
+More complicated reward functions like</em>
+$$\text{reward} = - 0.02 \cdot I(v_x \neq 0) - 0.02 \cdot I(v_y \neq 0) + 0.1  \cdot I(v_z \neq 0) - 0.002 (\varphi + \theta + \psi) + \frac{0.2}{(z_{\text{current}}-z_{\text{target}})^2} \cdot I(z_{\text{current}}-z_{\text{target}} \neq 0) - 0.002 \cdot ((x_{\text{current}}-x_{\text{target}})^2)+ (y_{\text{current}}-y_{\text{target}})^2)) $$ trying to minimize rotate and lateral displacements just led to more or less constant reward functions and no improvement in z.</p>
 
 </div>
 </div>
