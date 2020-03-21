@@ -1,8 +1,8 @@
 import keras
 from keras import regularizers
-from keras.models import Sequential, Model
-from keras.layers import Input, Dense, BatchNormalization, Activation, Lambda
-from keras.layers import Add #to merge
+from keras.models import Model
+from keras.layers import Input, Dense, BatchNormalization, Activation, Dropout
+from keras.layers import Lambda, Add #to merge
 from keras import backend as K
 
 
@@ -20,15 +20,19 @@ class Actor():
         self.build_actor_model()
     
     def actor_model(self):
+        droprate          = 0.2
         s                 = Input(shape = (self.state_size, ), name = 'actor_state')
         h1                = Dense(units = self.units[0], activation = 'relu', name = 'Act_D1')(s) 
         #do not need to give batch size in Keras
         b1                = BatchNormalization(name = 'Act_B1')(h1)
+
         h2                = Dense(units = self.units[1], activation = 'relu', name = 'Act_D2')(b1)
         b2                = BatchNormalization(name = 'Act_B2')(h2)
+
         h3                = Dense(units = self.units[2], activation = 'relu', name = 'Act_D3')(b2)
         b3                = BatchNormalization(name = 'Act_B3')(h3)
-        h4                = Dense(units = self.action_size, activation = 'sigmoid', name = 'raw_actions')(b3)
+        d3                = Dropout(rate = droprate, name = 'Act_Drop3')(b3)
+        h4                = Dense(units = self.action_size, activation = 'sigmoid', name = 'raw_actions')(d3)
         out               = Lambda(lambda x: (x*self.action_range)+self.action_low, name = 'actions')(h4)
         return Model(inputs = s, outputs = out)
         
@@ -62,17 +66,19 @@ class Critic():
         
     def critic_model(self):
         #Merging needs functional API --> https://github.com/keras-team/keras/issues/6357
-              
+        droprate    = 0.2      
         # (1) States pathway
         states      = Input(shape=(self.state_size, ), name = 'Critic_states')
         net_states  = Dense(units = self.units[0], activation = 'relu', name = 'h1_states')(states) 
         net_states  = BatchNormalization(name = 'B1_states')(net_states)
+        net_states  = Dropout(rate = droprate, name = 'states_Drop1')(net_states)
         net_states  = Dense(units = self.units[1], activation = 'relu', name = 'h2_states')(net_states)
         
         # (2) Actions pathway
         actions     = Input(shape=(self.action_size, ), name = 'Critic_actions')
         net_actions = Dense(units = self.units[0], activation = 'relu', name = 'h1_actions')(actions) 
         net_actions = BatchNormalization(name = 'B1_actions')(net_actions)
+        net_actions = Dropout(rate = droprate, name = 'actions_Drop1')(net_actions)
         net_actions = Dense(units = self.units[1], activation = 'relu', name = 'h2_actions')(net_actions)        
               
         # (3) Combine states and action pathways

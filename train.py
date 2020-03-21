@@ -13,16 +13,28 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
     velocities   = []
     euler_angles = []
     rewards      = []
+    actions      = []
     for i_episode in range(1, num_episodes+1):
         state    = agent.reset_episode() # start a new episode
+        '''
+        whilecnt = 0
+        crashcnt_episode = 0
+        nocrashcnt_episode = 0
+        '''
         while True:
+            #whilecnt += 1
             # ACT BASED ON CURRENT STATE
             action = agent.act(state) 
+            actions.append(action)
             # DO PHYSICS SIMULATION ("FLY")
-            x,y,z = task.sim.pose[:3]
-            vx,vy,vz = task.sim.v
-            phi, theta, psi = task.sim.angular_v
-            next_state, reward, done = task.step(action)
+            x,y,z                               = task.sim.pose[:3]
+            vx,vy,vz                            = task.sim.v
+            phi, theta, psi                     = task.sim.angular_v
+            next_state, reward, done, crash_cnt = task.step(action)
+            '''
+            if crash_cnt > 0: crashcnt_episode += 1
+            if crash_cnt == 0: nocrashcnt_episode += 1
+            '''
             # UPDATE EXPERIENCE AND LEARN IF POSSIBLE
             agent.step(action, reward, next_state, done)
             # ASSIGN next_state TO state
@@ -30,7 +42,7 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
             if done:
                 print("\rEpisode = {:4d}, average rewards = {:7.3f}"\
                       .format(i_episode, agent.avg_rewards), end="")  # [debug]
-                rewards.append(reward/agent.task.action_repeat)
+                rewards.append(reward)
                 coords.append([x,y,z])
                 velocities.append([vx,vy,vz])
                 euler_angles.append([phi, theta, psi])
@@ -95,6 +107,16 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
         plt.legend()
         #print("z = ", np.array(z))
         
+        fig = plt.figure(6)
+        fig.clf()
+        a0, a1, a2, a3 = zip(*actions)
+        plt.plot(np.array(a0), label='rotor 0 speed', marker = '.')
+        plt.plot(np.array(a1), label='rotor 1 speed', marker = '.')
+        plt.plot(np.array(a2), label='rotor 2 speed', marker = '.')
+        plt.plot(np.array(a3), label='rotor 3 speed', marker = '.')
+        plt.legend()
+        _ = plt.ylim()
+        
         def reward_fun(D, V):
             R = np.zeros(D.shape)
             for i in range(D.shape[0]):
@@ -103,7 +125,7 @@ def train(num_episodes = 1000, init_pos = np.array([0., 0., 1.0, 0.0, 0.0, 0.0])
                             
             return R
     
-        fig = plt.figure(6, figsize = (15,7))
+        fig = plt.figure(7, figsize = (15,7))
         fig.clf()
         ax = Axes3D(fig)
         z_displacement  = np.linspace(-50, 50, 200)

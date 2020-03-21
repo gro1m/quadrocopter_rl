@@ -38,8 +38,12 @@ class Task():
                               position[1] - self.target_pos[1], \
                               position[2] - self.target_pos[2]
                 
-        lateral_distance    = (dx + dy)**2
-        vertical_distance   = dz**2
+        lateral_distance    = (dx**2 + dy**2)**0.5
+        vertical_distance   = abs(dz)
+        angular_velocity    = (velocity[0]**2+velocity[1]**2)**0.5
+        
+        vchange             = self.sim.v - self.v_previous
+        abs_vchange         = (vchange[0]**2+vchange[1]**2+vchange[2]**2)**0.5
         '''
         reward              = -10*(self.sim.v[0]!=0)\
                               -10*(self.sim.v[1]!=0)\
@@ -48,27 +52,38 @@ class Task():
                               +100/vertical_distance*(vertical_distance != 0)\
                               -lateral_distance
         '''
-        reward              = - 0.00034 * vertical_distance**2 + 0.034*velocity[2]
+        reward              = - 0.03 * vertical_distance  \
+                              - 0.06 * lateral_distance \
+                              + 0.06 * velocity[2] \
+                              + 0.06 * (vertical_distance == 0) \
+                              - 0.01 * angular_velocity\
+                              - 0.01 * self.sim.pose[3:6].sum()\
+                              - 0.01 * abs_vchange
                             
-        return reward #np.clip(reward, -1, 1)
+        return reward#np.clip(reward, -1, 1)
 
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
         reward = 0
         pose_all = []
+        crash_count = 0
         for _ in range(self.action_repeat):
             self.v_previous = self.sim.v #store previous velocity
             done = self.sim.next_timestep(rotor_speeds) # update the sim pose and velocities
-            reward += self.get_reward() 
+            reward_update = self.get_reward() 
+            reward += reward_update / self.action_repeat
             #cumulative reward: good? --> action repeats --> needed to learn velocity as only position is incorporated into the state
             #reward  = self.get_reward(reward)
             #penalize crash
             if done and self.sim.time < self.sim.runtime:
-                reward         = -1
+                crash_count += 1
+                reward      -= 0.01
             
             pose_all.append(self.sim.pose)
+        
+        reward = np.clip(reward, -1, 1)
         next_state = np.concatenate(pose_all)
-        return next_state, reward, done
+        return next_state, reward, done, crash_count
 
     def reset(self):
         """Reset the sim to start a new episode."""

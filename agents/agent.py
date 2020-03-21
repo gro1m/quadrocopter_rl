@@ -16,9 +16,9 @@ class DDPG_Agent():
         
         # ACTOR (POLICY) MODEL
         self.actor_local       = Actor(self.state_size, self.action_size,
-                                   self.action_low, self.action_high)
+                                       self.action_low, self.action_high)
         self.actor_target      = Actor(self.state_size, self.action_size,
-                                   self.action_low, self.action_high)
+                                       self.action_low, self.action_high)
         
         # CRITIC (VALUE) MODEL
         self.critic_local      = Critic(self.state_size, self.action_size)
@@ -28,17 +28,17 @@ class DDPG_Agent():
         self.actor_target.model.set_weights(self.actor_local.model.get_weights())
         
         self.noise             = OUNoise(self.action_size, self.exploration_mu,
-                                     self.exploration_theta, self.exploration_sigma)
+                                         self.exploration_theta, self.exploration_sigma)
         
         self.memory            = ReplayBuffer(self.buffer_size, self.batch_size)
         
-        self.avg_rewards        = 0
+        self.avg_rewards       = 0
         
     def params(self):
         # NOISE PROCESS
         self.exploration_mu    = 0
-        self.exploration_theta = 0.15
-        self.exploration_sigma = 0.20
+        self.exploration_theta = 0.3#0.15
+        self.exploration_sigma = 0.6#0.20
         
         # REPLAY BUFFER
         self.buffer_size       = 100000 # buffer size
@@ -100,15 +100,15 @@ class DDPG_Agent():
         self.soft_update(self.critic_local.model, self.critic_target.model)
         self.soft_update(self.actor_local.model,  self.actor_target.model)
         
-        self.avg_rewards = np.sum(rewards)/(self.task.action_repeat*len(rewards))
+        self.avg_rewards = np.sum(rewards)/len(rewards)
         
     def soft_update(self, local_model, target_model):
         "Soft update model parameters."
         ''' After training batch of experiences we could just copy newly learned weights from the local model 
           to the target model. Individual experience batches can introduce a lot of variance in the process, 
           so it is better to perform a soft update controlled by parameter tau. '''
-        local_weights  = np.array(local_model.get_weights())
-        target_weights = np.array(target_model.get_weights())
+        local_weights    = np.array(local_model.get_weights())
+        target_weights   = np.array(target_model.get_weights())
         
         assert len(local_weights) == len(target_weights), "Local and target model parameters must have the same size"
         
